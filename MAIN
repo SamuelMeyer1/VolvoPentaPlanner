@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 # Config filer
 project_type = ["Underhåll", "Miljö", "Provning", "Utveckling", "Affärer"]
 project_leader = ["Adam Falk", "Samuel Meyer"]
+project_positions = []
 
 
 # Funktion för att lägga till ett projekt och rita det som ett Gantt-schema
@@ -17,15 +18,13 @@ def add_project():
     project_typ = project_type.get()
     project_ledare = project_leader.get()
     project_storlek = project_size.get()
-    gnatt_color = 'black'
     projekt_storlek = int(project_storlek)
-
-
-
+    value_x = 150
+    value_y = 100
 
     # Kontrollera om alla fält är ifyllda
-    if not project_name or not start_date or not end_date:
-        messagebox.showwarning("Missing Information", "Please fill in all fields.")
+    if not project_name:
+        messagebox.showwarning("ERROR", "Fyll i alla fällt")
         return
 
     # Kontrollera vilken färg som Gantt-Schemat ska ha
@@ -43,13 +42,28 @@ def add_project():
         gnatt_color = 'black'
 
     if projekt_storlek > 1000:
-        cell_height = 80
+        value_h = 40
     else:
-        cell_height = 40
+        value_h = 20
 
+    # Räkna ut antalet dagar mellan start och slutdatum
+    delta_days = (end_date - start_date).days
 
-    # Skriv ut informationen om projektet
+    # Beräkna lämplig y-koordinat för projektet
+    start_y = value_y + 5 + len(project_positions) * (value_h + value_h)
+    cell_height = value_h + value_h
 
+    # Lägg till Gantt-schema på canvas
+    canvas.create_rectangle(value_x, start_y, value_x + delta_days * 20, start_y + cell_height,
+                            fill=gnatt_color, outline="black", tags="project")
+
+    # Lägg till y-koordinaten för detta projekt i listan
+    project_positions.append(start_y)
+
+    # Uppdatera canvasens scrollregion för att inkludera alla objekt
+    canvas.configure(scrollregion=canvas.bbox("all"))
+
+    # Skriv ut information om projektet
     print(f"PROJEKT INFORMATION")
     print(f"Projektnamn: {project_name}")
     print(f"Projekttyp: {project_typ}")
@@ -57,20 +71,16 @@ def add_project():
     print(f"Projektstorlek: {projekt_storlek}")
     print(f"Start datum: {start_date}")
     print(f"Slut datum: {end_date}")
-
     print(f"GANTSCHEMA INFORMATION")
-
-
 
     # Räkna ut antalet dagar mellan start och slutdatum
     delta_days = (end_date - start_date).days
 
     # Skapa ett Gantt-schema för projektet
-    start_x = 150
-    start_y = 100
+    start_x = value_x
+    start_y = value_y + value_y
+    cell_height = value_h + value_h
 
-    canvas.create_rectangle(start_x, start_y, start_x + delta_days * 20, start_y + cell_height,
-                            fill=gnatt_color, outline="black", tags="project")
 
 # Skapa huvudfönstret
 root = tk.Tk()
@@ -130,7 +140,14 @@ for year in range(start_year, start_year + 5):  # Rita 5 år framåt
     for quarter in range(1, 5):  # Kvartal 1 till 4
         x = 150 + (year - start_year) * 400 + quarter * 100
         y = 50
-        canvas.create_text(x, y, text=f"Q{quarter}\n{year}", anchor="n")
+        canvas.create_text(x, y, text=f"{year}\nQ{quarter}", anchor="n")
+
+        # Rita ett streck efter varje kvartal (förutom det sista kvartalet i ett år)
+        if quarter < 4 or year < start_year + 4:  # Kolla om det inte är det sista kvartalet på det sista året
+            line_x = x + 50  # Lägg till en offset för att rita linjen efter texten
+            line_y_start = y + 10  # Y-koordinat för starten av linjen
+            line_y_end = y + 30  # Y-koordinat för slutet av linjen
+            canvas.create_line(line_x, line_y_start, line_x, line_y_end, fill="gray")
 
 # Starta huvudloopen för applikationen
 root.mainloop()
